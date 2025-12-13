@@ -27,6 +27,28 @@ uv sync
 uv run python -m src.bot.main
 ```
 
+### Tests
+
+- Unit tests (no network):
+
+```bash
+uv run pytest -m "not e2e"
+```
+
+- E2E tests (requires `MISTRAL_API_KEY` and network):
+
+```bash
+uv run pytest -m e2e
+```
+
+### Eval (rewrite-focused, for your report)
+
+```bash
+uv run python -m src.eval.run_eval --dataset data/validation_conversation.jsonl
+```
+
+See `docs/eval_metrics.md` for the suggested metrics and evaluation protocol.
+
 ### Notes
 - Telegram messages are sent in **HTML parse mode**; code fences like ```...``` will be rendered as `<pre><code>...</code></pre>`.
 - If the vector store / retriever is not connected yet, the bot will answer with a disclaimer (“base is empty/index not connected”).
