@@ -1,0 +1,77 @@
+# Python-specific #
+__pycache__/
+*.py[cod]
+*.pyo
+*.ipynb_checkpoints/
+*.egg
+*.egg-info/
+.eggs/
+build/
+dist/
+*.so
+
+# Virtual environment #
+env/
+venv/
+.venv/
+
+# dotenv #
+.env
+
+# Jupyter Notebook #
+*.ipynb
+!notebooks/*.ipynb
+.ipynb_checkpoints/
+
+# Logs #
+logs/
+*.log
+*.out
+*.err
+
+# Data and outputs #
+*.csv
+*.tsv
+*.json
+*.xml
+*.parquet
+*.h5
+*.pickle
+*.joblib
+*.npy
+*.npz
+*.pkl
+
+# Model weights and artifacts #
+*.h5
+*.ckpt
+*.pth
+*.pt
+*.onnx
+*.tflite
+catboost_info/
+
+# Experiment tracking #
+mlruns/
+tensorboard_logs/
+*.mlmodel
+
+# Ruff #
+.ruff_cache/
+
+# Temporary files #
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+
+# OS-generated files #
+.DS_Store
+Thumbs.db
+
+# IDE-specific files #
+.idea/
+*.sublime-workspace
+*.sublime-project
+.cursorignore
