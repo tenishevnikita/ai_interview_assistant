@@ -5,6 +5,8 @@ requires-python = ">=3.12"
 dependencies = [
     "aiogram>=3.23.0",
     "fastapi>=0.124.4",
+    "langchain-core>=1.2.0",
+    "langchain-mistralai>=1.1.1",
     "mistralai>=1.9.11",
     "pydantic>=2.12.5",
     "pydantic-settings>=2.12.0",
