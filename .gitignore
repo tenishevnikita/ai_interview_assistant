@@ -59,6 +59,9 @@ tensorboard_logs/
 # Ruff #
 .ruff_cache/
 
+# Pytest #
+.pytest_cache/
+
 # Temporary files #
 *.tmp
 *.temp
@@ -75,3 +78,9 @@ Thumbs.db
 *.sublime-workspace
 *.sublime-project
 .cursorignore
+
+# RAG data (сгенерированные данные, можно пересоздать) #
+data/handbook/*/chunks/
+data/handbook/*/*.txt
+data/faiss_index/
+# Но сырые HTML оставляем: data/raw/ не игнорируется
