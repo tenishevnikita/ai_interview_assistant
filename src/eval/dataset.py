@@ -44,5 +44,3 @@ def load_conversation_cases(path: str | Path) -> list[ConversationCase]:
             )
         )
     return cases
-
-

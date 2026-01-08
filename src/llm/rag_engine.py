@@ -31,6 +31,9 @@ def _format_docs(docs: list[Document], max_chars: int = 6000) -> str:
         meta = d.metadata or {}
         title = meta.get("title") or meta.get("source") or meta.get("chunk_id") or f"doc_{i}"
         snippet = (d.page_content or "").strip()
+        # Убираем префикс "passage: " который добавляется для e5 моделей
+        if snippet.startswith("passage: "):
+            snippet = snippet[9:]
         if not snippet:
             continue
         block = f"[{i}] {title}\n{snippet}\n"
@@ -83,5 +86,3 @@ class RAGEngine:
         self._memory.append_user(chat_id=chat_id, text=user_text)
         self._memory.append_ai(chat_id=chat_id, text=answer)
         return answer
-
-

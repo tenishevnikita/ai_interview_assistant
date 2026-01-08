@@ -26,5 +26,3 @@ def test_formatting_never_splits_inside_pre_block() -> None:
     # Each chunk should be a standalone <pre><code>...</code></pre>
     assert all(c.startswith("<pre><code>") and c.endswith("</code></pre>") for c in chunks)
     assert all(len(c) <= TG_LIMIT for c in chunks)
-
-

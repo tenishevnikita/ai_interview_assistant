@@ -27,18 +27,48 @@ uv sync
 uv run python -m src.bot.main
 ```
 
+### Linting & Formatting
+
+Check code with ruff:
+
+```bash
+make lint
+```
+
+Format code:
+
+```bash
+make format
+```
+
+Run all checks (lint + format + tests):
+
+```bash
+make check
+```
+
+Or install pre-commit hooks:
+
+```bash
+uv run pre-commit install
+```
+
 ### Tests
 
 - Unit tests (no network):
 
 ```bash
 uv run pytest -m "not e2e"
+# or
+make test
 ```
 
 - E2E tests (requires `MISTRAL_API_KEY` and network):
 
 ```bash
 uv run pytest -m e2e
+# or
+make test-e2e
 ```
 
 ### Eval (rewrite-focused, for your report)

@@ -51,5 +51,3 @@ class MemoryStore:
 
     def set_style(self, user_id: int, style: Style) -> None:
         self._prefs[user_id] = UserPrefs(style=style)
-
-

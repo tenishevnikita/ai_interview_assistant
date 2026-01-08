@@ -27,5 +27,3 @@ def build_answer_chain(model):
         ]
     )
     return prompt | model | StrOutputParser()
-
-

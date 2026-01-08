@@ -4,8 +4,8 @@ import argparse
 import json
 import os
 
-from langchain_mistralai import ChatMistralAI
 from langchain_core.messages import AIMessage, HumanMessage
+from langchain_mistralai import ChatMistralAI
 
 from src.eval.dataset import load_conversation_cases
 from src.llm.chains import build_answer_chain, build_rewrite_chain
@@ -75,7 +75,9 @@ def main() -> int:
         if style not in {s.value for s in Style}:
             style = Style.BRIEF.value
 
-        resp = answer.invoke({"question": standalone or case.user_message, "context": "(контекст пуст)", "style": style})
+        resp = answer.invoke(
+            {"question": standalone or case.user_message, "context": "(контекст пуст)", "style": style}
+        )
         resp = (resp or "").strip()
 
         rows.append(
@@ -110,5 +112,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
-

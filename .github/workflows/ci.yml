@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+
+      - name: Install dependencies
+        run: |
+          uv sync --all-groups
+
+      - name: Run ruff linter
+        run: |
+          uv run ruff check .
+
+      - name: Run ruff formatter check
+        run: |
+          uv run ruff format --check .
+
+      - name: Run tests
+        run: |
+          uv run pytest tests/ -v --ignore=tests/e2e
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+
+      - name: Run e2e tests (if secrets available)
+        if: ${{ secrets.MISTRAL_API_KEY != '' }}
+        run: |
+          uv run pytest tests/e2e -v -m e2e
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+

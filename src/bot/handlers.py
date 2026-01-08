@@ -70,5 +70,3 @@ async def on_text(message: Message) -> None:
     answer = await engine.answer(chat_id=chat_id, user_id=user_id, user_text=user_text)
     for chunk in format_and_split_for_telegram_html(answer):
         await message.answer(chunk)
-
-

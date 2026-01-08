@@ -3,11 +3,10 @@ from __future__ import annotations
 import os
 
 import pytest
-from langchain_mistralai import ChatMistralAI
 from langchain_core.messages import AIMessage, HumanMessage
+from langchain_mistralai import ChatMistralAI
 
 from src.llm.chains import build_rewrite_chain
-
 
 pytestmark = pytest.mark.e2e
 
@@ -32,5 +31,3 @@ async def test_rewrite_followup_gradient_boosting() -> None:
     # We expect the follow-up to be rewritten into a standalone question about algorithms of gradient boosting.
     assert "алгоритм" in s
     assert ("градиент" in s and "буст" in s) or "boost" in s
-
-

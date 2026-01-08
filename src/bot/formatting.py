@@ -120,5 +120,3 @@ def format_and_split_for_telegram_html(text: str, limit: int = TG_LIMIT) -> list
 
     # Telegram HTML dislikes completely empty messages.
     return [c for c in (c.strip() for c in chunks) if c]
-
-

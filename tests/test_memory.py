@@ -24,5 +24,3 @@ def test_prefs_style_roundtrip() -> None:
     assert m.get_prefs(user_id).style == Style.BRIEF
     m.set_style(user_id, Style.DETAILED)
     assert m.get_prefs(user_id).style == Style.DETAILED
-
-
