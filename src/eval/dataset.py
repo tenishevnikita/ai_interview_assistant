@@ -20,7 +20,7 @@ class ConversationCase:
     # New format: AND of OR-groups. For each group, at least one alternative must appear.
     # Example: [["пример", "алгоритм"], ["градиент", "boost"]]
     expected_standalone_question_groups: list[list[str]]
-    style: str  # "brief" | "detailed" | "socratic"
+    style: str  # "brief" | "detailed"
     tags: list[str]
 
 

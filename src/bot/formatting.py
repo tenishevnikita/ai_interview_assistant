@@ -7,11 +7,164 @@ TG_LIMIT = 4096
 
 
 _FENCE_RE = re.compile(r"```(\w+)?\n([\s\S]*?)```", re.MULTILINE)
+# Headings: # Heading, ## Heading, ### Heading, #### Heading
+_HEADING_RE = re.compile(r"^#{1,4}\s+(.+)$", re.MULTILINE)
+# Inline code: `code` (но не внутри блоков кода)
+_INLINE_CODE_RE = re.compile(r"`([^`\n]+)`")
+# Bold: **text** or __text__ (но не внутри inline кода)
+_BOLD_RE = re.compile(r"\*\*([^*\n]+?)\*\*|(?<![_*])__([^_\n]+?)__(?![_*])")
+# Italic: *text* or _text_ (но не **text** или __text__)
+# Используем lookahead/lookbehind чтобы не конфликтовать с жирным
+_ITALIC_RE = re.compile(r"(?<!\*)\*(?!\*)([^*\n]+?)(?<!\*)\*(?!\*)|(?<!_)_(?!_)([^_\n]+?)(?<!_)_(?!_)")
+
+
+def _escape_html_text(text: str) -> str:
+    """
+    Экранирует HTML символы в тексте, но сохраняет уже существующие HTML теги.
+    Использует простой подход: экранирует всё, затем восстанавливает валидные теги.
+    """
+    # Экранируем всё
+    escaped = html.escape(text)
+
+    # Восстанавливаем валидные HTML теги для Telegram
+    # Примечание: Telegram HTML не поддерживает <br> тег
+    valid_tags = ["<b>", "</b>", "<i>", "</i>", "<code>", "</code>", "<pre>", "</pre>"]
+    for tag in valid_tags:
+        escaped_tag = html.escape(tag)
+        escaped = escaped.replace(escaped_tag, tag)
+
+    return escaped
+
+
+def _markdown_to_html(text: str) -> str:
+    """
+    Конвертирует базовые Markdown элементы в HTML для Telegram.
+
+    Порядок важен:
+    1. Inline код (чтобы не трогать код внутри)
+    2. Жирный текст
+    3. Курсив
+    """
+    # Обрабатываем inline код - заменяем на плейсхолдеры
+    code_placeholders: dict[str, str] = {}
+    code_counter = 0
+
+    def replace_inline_code(match: re.Match) -> str:
+        nonlocal code_counter
+        code = match.group(1)
+        placeholder = f"PLACEHOLDERINLINECODE{code_counter}PLACEHOLDER"
+        code_placeholders[placeholder] = f"<code>{html.escape(code)}</code>"
+        code_counter += 1
+        return placeholder
+
+    text = _INLINE_CODE_RE.sub(replace_inline_code, text)
+
+    # Затем обрабатываем жирный текст
+    def replace_bold(match: re.Match) -> str:
+        content = match.group(1) or match.group(2)
+        return f"<b>{html.escape(content)}</b>"
+
+    text = _BOLD_RE.sub(replace_bold, text)
+
+    # Затем обрабатываем курсив
+    def replace_italic(match: re.Match) -> str:
+        content = match.group(1) or match.group(2)
+        return f"<i>{html.escape(content)}</i>"
+
+    text = _ITALIC_RE.sub(replace_italic, text)
+
+    # Восстанавливаем inline код
+    for placeholder, html_code in code_placeholders.items():
+        text = text.replace(placeholder, html_code)
+
+    return text
 
 
 def _render_text_html(text: str) -> str:
-    # Minimal formatting: keep newlines.
-    return html.escape(text).replace("\n", "\n")
+    """
+    Конвертирует Markdown в HTML для Telegram и экранирует остальное.
+    Сохраняет переносы строк как есть (Telegram HTML не поддерживает <br> тег).
+    """
+    # Сначала обрабатываем заголовки - заменяем на плейсхолдеры
+    heading_placeholders: dict[str, str] = {}
+    heading_counter = 0
+
+    def replace_heading_placeholder(match: re.Match) -> str:
+        nonlocal heading_counter
+        heading_text = match.group(1).strip()
+        placeholder = f"PLACEHOLDERHEADING{heading_counter}PLACEHOLDER"
+        heading_placeholders[placeholder] = heading_text
+        heading_counter += 1
+        return placeholder
+
+    text = _HEADING_RE.sub(replace_heading_placeholder, text)
+
+    # Конвертируем остальной Markdown в HTML
+    text = _markdown_to_html(text)
+
+    # Обрабатываем заголовки: применяем форматирование внутри них, затем оборачиваем в <b>
+    for placeholder, heading_text in heading_placeholders.items():
+        # Применяем форматирование к тексту заголовка
+        processed_heading = heading_text
+
+        # Обрабатываем inline код
+        processed_heading = _INLINE_CODE_RE.sub(
+            lambda m: f"<code>{html.escape(m.group(1))}</code>",
+            processed_heading
+        )
+
+        # Убираем маркеры жирного текста (весь заголовок будет жирным)
+        processed_heading = _BOLD_RE.sub(
+            lambda m: html.escape(m.group(1) or m.group(2)),
+            processed_heading
+        )
+
+        # Обрабатываем курсив
+        processed_heading = _ITALIC_RE.sub(
+            lambda m: f"<i>{html.escape(m.group(1) or m.group(2))}</i>",
+            processed_heading
+        )
+
+        # Экранируем остальной HTML
+        processed_heading = html.escape(processed_heading)
+
+        # Восстанавливаем теги кода и курсива (которые были экранированы)
+        # Находим код в исходном тексте
+        code_match = _INLINE_CODE_RE.search(heading_text)
+        if code_match:
+            code_content = code_match.group(1)
+            escaped_code = html.escape(code_content)
+            escaped_code_tag_open = html.escape("<code>")
+            escaped_code_tag_close = html.escape("</code>")
+            # Заменяем экранированные теги и содержимое на правильные теги
+            processed_heading = processed_heading.replace(
+                escaped_code_tag_open + escaped_code + escaped_code_tag_close,
+                f"<code>{escaped_code}</code>"
+            )
+
+        # Находим курсив в исходном тексте
+        italic_match = _ITALIC_RE.search(heading_text)
+        if italic_match:
+            italic_content = italic_match.group(1) or italic_match.group(2)
+            escaped_italic = html.escape(italic_content)
+            escaped_italic_tag_open = html.escape("<i>")
+            escaped_italic_tag_close = html.escape("</i>")
+            # Заменяем экранированные теги и содержимое на правильные теги
+            processed_heading = processed_heading.replace(
+                escaped_italic_tag_open + escaped_italic + escaped_italic_tag_close,
+                f"<i>{escaped_italic}</i>"
+            )
+
+        # Оборачиваем весь заголовок в <b>
+        heading_html = f"<b>{processed_heading}</b>"
+        text = text.replace(placeholder, heading_html)
+
+    # Экранируем HTML символы, но сохраняем валидные теги
+    text = _escape_html_text(text)
+
+    # Telegram HTML не поддерживает <br> тег - переносы строк остаются как \n
+    # Telegram сам обработает переносы строк при отображении
+    return text
 
 
 def _render_code_html(code: str) -> str:

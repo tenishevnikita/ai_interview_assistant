@@ -10,7 +10,6 @@ from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 class Style(StrEnum):
     BRIEF = "brief"
     DETAILED = "detailed"
-    SOCRATIC = "socratic"
 
 
 @dataclass(frozen=True)
@@ -51,3 +50,7 @@ class MemoryStore:
 
     def set_style(self, user_id: int, style: Style) -> None:
         self._prefs[user_id] = UserPrefs(style=style)
+
+    def clear_history(self, chat_id: int) -> None:
+        """Очищает историю диалога для указанного чата."""
+        self._histories[chat_id] = []
