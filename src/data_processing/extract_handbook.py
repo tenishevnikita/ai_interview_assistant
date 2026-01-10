@@ -242,7 +242,14 @@ def extract_text_from_html(html_path: Path) -> Optional[dict]:
         print(f"  ⚠️  Нет контента: {html_path.name}")
         return None
 
-    return {"title": title, "description": description, "source_file": html_path.name, "sections": sections}
+    source_link = extract_source_link(html_path.name)
+    return {
+        "title": title,
+        "description": description,
+        "source_file": html_path.name,
+        "source_link": source_link,
+        "sections": sections,
+    }
 
 
 def format_for_rag(data: dict) -> str:
@@ -316,10 +323,12 @@ def save_for_rag(all_data: list[dict], output_dir: Path) -> None:
 
     chunk_idx = 0
     for data in all_data:
+        source_link = data.get("source_link", "")
         for section in data["sections"]:
             chunk_idx += 1
 
-            chunk_text = f"# {data['title']}\n\n## {section['heading']}\n\n"
+            # Добавляем source_link как метаданные в начале чанка
+            chunk_text = f"[source_link: {source_link}]\n\n# {data['title']}\n\n## {section['heading']}\n\n"
 
             for item in section["content"]:
                 if item["type"] == "paragraph":
