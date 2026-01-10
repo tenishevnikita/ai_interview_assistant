@@ -45,7 +45,15 @@ def load_chunks_from_directory(chunks_dir: Path) -> list[Document]:
                 continue
 
             lines = content.split("\n")
-            title = lines[0].lstrip("# ").strip() if lines else txt_file.stem
+            
+            # Извлекаем title из строки с # (название статьи, не ##)
+            # Первая строка может быть [source_link: ...], поэтому ищем первую строку с #
+            title = txt_file.stem  # fallback
+            for line in lines[:15]:  # Проверяем первые 15 строк
+                stripped = line.strip()
+                if stripped.startswith("# ") and not stripped.startswith("## "):
+                    title = stripped.removeprefix("# ").strip()
+                    break
 
             # Для e5 моделей добавляем префикс "passage: "
             prefixed_content = f"passage: {content}"

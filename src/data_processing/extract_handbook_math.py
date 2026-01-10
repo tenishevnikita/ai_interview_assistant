@@ -36,7 +36,7 @@ def extract_source_link(source_file: str) -> str:
         slug = name.split("_", 1)[1]
     else:
         slug = name
-    return f"{BASE_URL}/{slug}"
+    return f"{BASE_URL}/article/{slug}"
 
 
 # Паттерны для фильтрации ненужных секций и текстов

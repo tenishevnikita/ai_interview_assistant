@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import asyncio
+import html
 import logging
+import re
 from dataclasses import dataclass
 from typing import Protocol
 
@@ -98,9 +100,11 @@ async def _retry_with_backoff(func, max_retries: int = 3, initial_delay: float =
 def _format_sources(docs: list[Document]) -> str:
     """
     Форматирует список источников из документов для отображения в ответе.
+    Создает кликабельные ссылки в формате Telegram HTML.
+    Извлекает source_link и title из page_content, если их нет в metadata.
 
     Args:
-        docs: список документов с metadata
+        docs: список документов с metadata и page_content
 
     Returns:
         отформатированная строка с источниками или пустая строка
@@ -109,15 +113,62 @@ def _format_sources(docs: list[Document]) -> str:
         return ""
 
     sources: list[str] = []
-    seen_titles: set[str] = set()
+    seen_combinations: set[tuple[str, str]] = set()  # (title, source_link) для дедупликации
 
     for doc in docs:
         meta = doc.metadata or {}
-        title = meta.get("title") or meta.get("source") or meta.get("chunk_id")
-        if not title or title in seen_titles:
+        
+        # Сначала пытаемся взять из metadata
+        title = meta.get("title")
+        source_link = meta.get("source_link", "")
+        
+        # Если нет в metadata, извлекаем из page_content
+        if not title or not source_link:
+            content = doc.page_content or ""
+            # Убираем префикс "passage: " если есть
+            if content.startswith("passage: "):
+                content = content[9:]
+            
+            # Извлекаем source_link из начала чанка (формат: [source_link: URL])
+            if not source_link:
+                match = re.search(r"\[source_link:\s*([^\]]+)\]", content)
+                if match:
+                    source_link = match.group(1).strip()
+            
+            # Извлекаем title из строки с # (название статьи, не ##)
+            if not title:
+                lines = content.split("\n")
+                for line in lines[:15]:  # Проверяем первые 15 строк
+                    stripped = line.strip()
+                    if stripped.startswith("# ") and not stripped.startswith("## "):
+                        title = stripped.removeprefix("# ").strip()
+                        break
+        
+        # Fallback на другие поля metadata
+        if not title:
+            title = meta.get("source") or meta.get("chunk_id")
+
+        if not title:
             continue
-        seen_titles.add(title)
-        sources.append(f"• {title}")
+
+        # Дедупликация по комбинации title + source_link
+        key = (title, source_link)
+        if key in seen_combinations:
+            continue
+        seen_combinations.add(key)
+
+        # Экранируем HTML в тексте ссылки
+        escaped_text = html.escape(title)
+
+        # Формируем источник
+        if source_link:
+            # Создаем кликабельную ссылку в формате Telegram HTML
+            source_item = f"• <a href=\"{html.escape(source_link)}\">{escaped_text}</a>"
+        else:
+            # Если нет ссылки, просто текст
+            source_item = f"• {escaped_text}"
+
+        sources.append(source_item)
 
     if not sources:
         return ""
@@ -194,8 +245,24 @@ class RAGEngine:
         # Добавляем disclaimer в начало
         answer = f"{disclaimer}{answer}".strip()
 
-        # Добавляем ссылки на источники, если есть документы
-        if docs:
+        # Проверяем, говорит ли ответ о том, что информации нет в базе
+        # Если да - не показываем источники, даже если они есть
+        answer_lower = answer.lower()
+        no_info_phrases = [
+            "в базе нет информации",
+            "нет информации",
+            "не найдено",
+            "не содержит",
+            "нет ответа",
+            "нет данных",
+        ]
+        has_no_info = any(phrase in answer_lower for phrase in no_info_phrases)
+
+        # Добавляем ссылки на источники только если:
+        # 1. Есть документы
+        # 2. Нет disclaimer о пустой базе
+        # 3. Ответ не говорит о том, что информации нет
+        if docs and not disclaimer and not has_no_info:
             sources = _format_sources(docs)
             if sources:
                 answer = f"{answer}{sources}"

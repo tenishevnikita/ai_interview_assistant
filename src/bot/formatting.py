@@ -21,17 +21,48 @@ _ITALIC_RE = re.compile(r"(?<!\*)\*(?!\*)([^*\n]+?)(?<!\*)\*(?!\*)|(?<!_)_(?!_)(
 def _escape_html_text(text: str) -> str:
     """
     Экранирует HTML символы в тексте, но сохраняет уже существующие HTML теги.
-    Использует простой подход: экранирует всё, затем восстанавливает валидные теги.
+    Использует простой подход: сначала защищаем валидные HTML теги, затем экранируем остальное.
     """
-    # Экранируем всё
-    escaped = html.escape(text)
-
-    # Восстанавливаем валидные HTML теги для Telegram
-    # Примечание: Telegram HTML не поддерживает <br> тег
+    # Сначала защищаем валидные HTML теги, заменяя их на плейсхолдеры
+    # Это нужно чтобы они не были экранированы
+    placeholders: dict[str, str] = {}
+    placeholder_counter = 0
+    
+    # Защищаем теги <a> с атрибутами (самые сложные)
+    a_tag_pattern = re.compile(r'<a\s+[^>]+>')
+    def protect_a_tag(match):
+        nonlocal placeholder_counter
+        tag = match.group(0)
+        placeholder = f"__PLACEHOLDER_A_TAG_{placeholder_counter}__"
+        placeholders[placeholder] = tag
+        placeholder_counter += 1
+        return placeholder
+    text = a_tag_pattern.sub(protect_a_tag, text)
+    
+    # Защищаем закрывающие теги </a>
+    def protect_a_close(match):
+        nonlocal placeholder_counter
+        tag = match.group(0)
+        placeholder = f"__PLACEHOLDER_A_CLOSE_{placeholder_counter}__"
+        placeholders[placeholder] = tag
+        placeholder_counter += 1
+        return placeholder
+    text = re.sub(r'</a>', protect_a_close, text)
+    
+    # Защищаем другие валидные теги
     valid_tags = ["<b>", "</b>", "<i>", "</i>", "<code>", "</code>", "<pre>", "</pre>"]
     for tag in valid_tags:
-        escaped_tag = html.escape(tag)
-        escaped = escaped.replace(escaped_tag, tag)
+        placeholder = f"__PLACEHOLDER_{placeholder_counter}__"
+        placeholders[placeholder] = tag
+        text = text.replace(tag, placeholder)
+        placeholder_counter += 1
+    
+    # Экранируем всё остальное
+    escaped = html.escape(text)
+    
+    # Восстанавливаем защищенные теги
+    for placeholder, tag in placeholders.items():
+        escaped = escaped.replace(placeholder, tag)
 
     return escaped
 
@@ -224,52 +255,91 @@ def _split_plain(text: str, limit: int) -> list[str]:
 
 
 def format_and_split_for_telegram_html(text: str, limit: int = TG_LIMIT) -> list[str]:
-    """Convert markdown-ish text with ``` fences into Telegram HTML and split safely."""
+    """
+    Конвертирует Markdown в HTML для Telegram и разбивает на сообщения.
+
+    Блоки кода объединяются с текстом в одном сообщении, если это возможно.
+    Разбиение происходит только если сообщение превышает лимит.
+    """
     blocks = _parse_fenced_blocks(text)
     rendered: list[str] = []
     for kind, content in blocks:
         if kind == "code":
-            # Code block may still exceed the limit; split by lines and wrap each chunk.
-            code_lines = content.splitlines(keepends=True)
-            if not code_lines:
-                rendered.append(_render_code_html(""))
-                continue
-            cur = ""
-            for line in code_lines:
-                if len(_render_code_html(cur + line)) <= limit:
-                    cur += line
-                else:
-                    rendered.append(_render_code_html(cur.rstrip("\n")))
-                    cur = line
-            if cur or not rendered:
-                rendered.append(_render_code_html(cur.rstrip("\n")))
+            # Рендерим код как HTML блок
+            rendered.append(_render_code_html(content))
         else:
             rendered.append(_render_text_html(content))
 
-    # Join rendered blocks, then split without breaking <pre> blocks (they are standalone items).
+    # Объединяем блоки в сообщения, стараясь включать код вместе с текстом
     chunks: list[str] = []
     buf = ""
+
     for piece in rendered:
-        if piece.startswith("<pre><code>"):
-            if buf.strip():
-                chunks.extend(_split_plain(buf, limit))
-                buf = ""
-            if len(piece) <= limit:
-                chunks.append(piece)
-            else:
-                # Should not happen because we split code above, but guard anyway.
-                chunks.extend(_split_plain(piece, limit))
+        piece_len = len(piece)
+
+        # Если текущий буфер пуст и кусок помещается - просто добавляем
+        if not buf.strip() and piece_len <= limit:
+            buf = piece
             continue
 
-        # Normal text html: accumulate and split if needed.
-        if len(buf) + len(piece) <= limit:
-            buf += piece
+        # Пытаемся добавить кусок к буферу
+        combined_len = len(buf) + len(piece) if buf else piece_len
+
+        if combined_len <= limit:
+            # Можно объединить - добавляем к буферу
+            if buf:
+                # Добавляем перенос строки между текстом и кодом для читаемости
+                buf = f"{buf}\n{piece}"
+            else:
+                buf = piece
+        else:
+            # Не помещается - нужно разбить
+            if buf.strip():
+                # Сохраняем текущий буфер
+                if buf.startswith("<pre><code>"):
+                    # Это блок кода - отправляем как есть
+                    chunks.append(buf)
+                else:
+                    # Это текст - разбиваем по необходимости
+                    chunks.extend(_split_plain(buf, limit))
+                buf = ""
+
+            # Обрабатываем текущий кусок
+            if piece.startswith("<pre><code>"):
+                # Блок кода - проверяем размер
+                if piece_len <= limit:
+                    buf = piece
+                else:
+                    # Код слишком большой - нужно разбить по строкам
+                    # Извлекаем код из HTML
+                    code_match = re.search(r"<pre><code>(.*?)</code></pre>", piece, re.DOTALL)
+                    if code_match:
+                        code_content = code_match.group(1)
+                        code_lines = code_content.splitlines(keepends=True)
+                        code_buf = ""
+                        for line in code_lines:
+                            line_html = _render_code_html(code_buf + line)
+                            if len(line_html) <= limit:
+                                code_buf += line
+                            else:
+                                if code_buf:
+                                    chunks.append(_render_code_html(code_buf.rstrip("\n")))
+                                code_buf = line
+                        if code_buf.strip():
+                            buf = _render_code_html(code_buf.rstrip("\n"))
+                    else:
+                        # Fallback: отправляем как есть (будет ошибка, но лучше чем ничего)
+                        chunks.append(piece)
+            else:
+                # Текст - разбиваем по необходимости
+                chunks.extend(_split_plain(piece, limit))
+
+    # Добавляем оставшийся буфер
+    if buf.strip():
+        if buf.startswith("<pre><code>"):
+            chunks.append(buf)
         else:
             chunks.extend(_split_plain(buf, limit))
-            buf = piece
-
-    if buf.strip():
-        chunks.extend(_split_plain(buf, limit))
 
     # Telegram HTML dislikes completely empty messages.
     return [c for c in (c.strip() for c in chunks) if c]
