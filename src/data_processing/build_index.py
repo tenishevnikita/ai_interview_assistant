@@ -157,6 +157,12 @@ def main():
     if not args.chunks_dirs:
         default_dirs = [
             PROCESSED_DATA_DIR / "python" / "chunks",
+            PROCESSED_DATA_DIR / "ml" / "chunks",
+            PROCESSED_DATA_DIR / "cs" / "chunks",
+            PROCESSED_DATA_DIR / "cpp" / "chunks",
+            PROCESSED_DATA_DIR / "algorithms" / "chunks",
+            PROCESSED_DATA_DIR / "linux" / "chunks",
+            PROCESSED_DATA_DIR / "math" / "chunks",
         ]
         args.chunks_dirs = [d for d in default_dirs if d.exists()]
 
