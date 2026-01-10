@@ -25,6 +25,20 @@ from src.data_processing import PROCESSED_DATA_DIR, RAW_DATA_DIR
 INPUT_DIR = RAW_DATA_DIR / "ml"
 OUTPUT_DIR = PROCESSED_DATA_DIR / "ml"
 
+# Базовый URL для формирования ссылок
+BASE_URL = "https://education.yandex.ru/handbook/ml"
+
+
+def extract_source_link(source_file: str) -> str:
+    """Извлекает URL страницы из имени файла."""
+    name = source_file.replace(".html", "")
+    if "_" in name:
+        slug = name.split("_", 1)[1]
+    else:
+        slug = name
+    return f"{BASE_URL}/{slug}"
+
+
 # Паттерны для фильтрации ненужных секций и текстов
 SKIP_FILE_PATTERNS = [
     r"chemu-vi-nauchilis",  # Обзорные статьи "Чему вы научились"
