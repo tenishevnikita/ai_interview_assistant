@@ -20,28 +20,76 @@
 - **URL:** https://education.yandex.ru/handbook/python
 - **Описание:** Бесплатный учебник по Python от Яндекс Образования
 - **Темы:** Основы Python, коллекции, функции, ООП, работа с файлами, numpy, pandas, requests
-- **Количество статей:** 27 (20 после фильтрации)
+- **Количество статей:** 27
 - **Чанков:** 328
+
+### Яндекс Хендбук по ML
+- **URL:** https://education.yandex.ru/handbook/ml
+- **Описание:** Машинное обучение — от базовых концепций до продвинутых алгоритмов
+- **Темы:** Линейные модели, градиентный бустинг, нейронные сети, кластеризация, метрики
+- **Количество статей:** 70
+- **Чанков:** 816
+
+### Яндекс Хендбук по CS (Введение в компьютерные науки)
+- **URL:** https://education.yandex.ru/handbook/vvedenie-v-kompiuternie-nauki
+- **Описание:** Фундаментальные основы информатики
+- **Темы:** Системы счисления, логические операции, представление данных, архитектура компьютера
+- **Количество статей:** 24
+- **Чанков:** 132
+
+### Яндекс Хендбук по C++
+- **URL:** https://education.yandex.ru/handbook/cpp
+- **Описание:** Современный C++ от базовых конструкций до продвинутых концепций
+- **Темы:** Типы данных, контейнеры STL, классы, шаблоны, RAII, умные указатели
+- **Количество статей:** 24
+- **Чанков:** (не извлечены)
+
+### Яндекс Хендбук по Алгоритмам
+- **URL:** https://education.yandex.ru/handbook/algorithms
+- **Описание:** Алгоритмы и структуры данных
+- **Темы:** Графы, динамическое программирование, сортировки, бинарный поиск, жадные алгоритмы
+- **Количество статей:** 53
+- **Чанков:** (не извлечены)
+
+### Яндекс Хендбук по Linux
+- **URL:** https://education.yandex.ru/handbook/linux
+- **Описание:** Основы работы с Linux и командной строкой
+- **Темы:** Терминал, файловая система, навигация, потоки ввода/вывода, текстовые редакторы
+- **Количество статей:** 19
+- **Чанков:** (не извлечены)
+
+### Яндекс Хендбук по Математике
+- **URL:** https://education.yandex.ru/handbook/math
+- **Описание:** Математика для программистов
+- **Темы:** Линейная алгебра, дискретная математика, теория вероятностей, комбинаторика
+- **Количество статей:** 43
+- **Чанков:** (не извлечены)
 
 ---
 
 ## Скачивание данных
 
-### Скрипт: `src/data_processing/download_handbook.py`
+### Скрипты
 
-HTML файлы скачиваются автоматически через Selenium.
+Для каждого хендбука есть отдельный скрипт:
 
-```bash
-uv run python -m src.data_processing.download_handbook
-```
+| Хендбук | Скрипт | Команда |
+|---------|--------|---------|
+| Python | `download_handbook.py` | `uv run python -m src.data_processing.download_handbook` |
+| ML | `download_handbook_ml.py` | `uv run python -m src.data_processing.download_handbook_ml` |
+| CS | `download_handbook_cs.py` | `uv run python -m src.data_processing.download_handbook_cs` |
+| C++ | `download_handbook_cpp.py` | `uv run python -m src.data_processing.download_handbook_cpp` |
+| Algorithms | `download_handbook_algo.py` | `uv run python -m src.data_processing.download_handbook_algo` |
+| Linux | `download_handbook_linux.py` | `uv run python -m src.data_processing.download_handbook_linux` |
+| Math | `download_handbook_math.py` | `uv run python -m src.data_processing.download_handbook_math` |
 
 ### Как работает скрипт
 
-1. **Открывает главную страницу хендбука** (`/handbook/python`)
+1. **Открывает главную страницу хендбука**
 2. **Собирает ссылки на все главы** из оглавления (CSS: `ul.styles_book-contents__a6F2_ a`)
 3. **Последовательно загружает каждую страницу** с рандомной задержкой (2-4 сек)
 4. **Обрабатывает капчу** — если появляется SmartCaptcha, ждёт пока пользователь пройдёт её вручную
-5. **Сохраняет полный HTML** страницы в `data/raw/handbook/python/`
+5. **Сохраняет полный HTML** страницы в `data/raw/handbook/{topic}/`
 
 ### Защита от блокировки
 
@@ -52,13 +100,14 @@ uv run python -m src.data_processing.download_handbook
 ### Выходные файлы
 
 ```
-data/raw/handbook/python/
-├── 01_prezhde-chem-nachat.html
-├── 02_kak-rabotat-s-sistemoi-proverki-zadanii.html
-├── 03_chto-takoe-python.html
-├── 04_interpretatora-i-nastroika-sredi-razrabotki-pervii-shag-v-programmirovanii.html
-├── ...
-└── 31_6.4.chemu-vi-nauchilis.html
+data/raw/handbook/
+├── python/           # 27 файлов
+├── ml/               # 70 файлов
+├── cs/               # 24 файла
+├── cpp/              # 24 файла
+├── algorithms/       # 53 файла
+├── linux/            # 19 файлов
+└── math/             # 43 файла
 ```
 
 **Формат имени:** `{номер}_{slug-из-url}.html`
@@ -67,13 +116,17 @@ data/raw/handbook/python/
 
 ## Извлечение текста из HTML
 
-### Скрипт: `src/data_processing/extract_handbook.py`
+### Скрипты
 
-Извлекает структурированный текст из HTML файлов.
-
-```bash
-uv run python -m src.data_processing.extract_handbook
-```
+| Хендбук | Скрипт | Команда |
+|---------|--------|---------|
+| Python | `extract_handbook.py` | `uv run python -m src.data_processing.extract_handbook` |
+| ML | `extract_handbook_ml.py` | `uv run python -m src.data_processing.extract_handbook_ml` |
+| CS | `extract_handbook_cs.py` | `uv run python -m src.data_processing.extract_handbook_cs` |
+| C++ | `extract_handbook_cpp.py` | `uv run python -m src.data_processing.extract_handbook_cpp` |
+| Algorithms | `extract_handbook_algo.py` | `uv run python -m src.data_processing.extract_handbook_algo` |
+| Linux | `extract_handbook_linux.py` | `uv run python -m src.data_processing.extract_handbook_linux` |
+| Math | `extract_handbook_math.py` | `uv run python -m src.data_processing.extract_handbook_math` |
 
 ### Что делает скрипт
 
@@ -111,13 +164,20 @@ uv run python -m src.data_processing.extract_handbook
 ### Выходные данные
 
 ```
-data/handbook/python/
-├── handbook_python.txt    # Полный текст (11K+ строк)
-├── handbook_python.json   # Структурированный JSON
-└── chunks/                # Чанки по секциям (328 файлов)
-    ├── chunk_001_что_такое_язык_программирования.txt
-    ├── chunk_002_почему_компьютер_не_понимает_команды.txt
-    └── ...
+data/handbook/
+├── python/
+│   ├── handbook_python.txt    # Полный текст
+│   ├── handbook_python.json   # Структурированный JSON
+│   └── chunks/                # 328 чанков
+├── ml/
+│   ├── handbook_ml.txt
+│   ├── handbook_ml.json
+│   └── chunks/                # 816 чанков
+├── cs/
+│   ├── handbook_cs.txt
+│   ├── handbook_cs.json
+│   └── chunks/                # 132 чанка
+└── ... (другие хендбуки)
 ```
 
 ---
@@ -175,17 +235,29 @@ print(f"Добрый день, {name}.")
 ### Скрипт: `src/data_processing/build_index.py`
 
 ```bash
-# Базовое использование
+# Базовое использование (все доступные хендбуки)
 uv run python -m src.data_processing.build_index
 
 # С тестовыми запросами
 uv run python -m src.data_processing.build_index --test
 
-# Указать директории и путь к индексу
+# Указать директории вручную
 uv run python -m src.data_processing.build_index \
     --chunks-dir data/handbook/python/chunks \
+    --chunks-dir data/handbook/ml/chunks \
     --index-path data/my_index
 ```
+
+### Автоматическое обнаружение хендбуков
+
+Скрипт автоматически ищет чанки в следующих директориях:
+- `data/handbook/python/chunks`
+- `data/handbook/ml/chunks`
+- `data/handbook/cs/chunks`
+- `data/handbook/cpp/chunks`
+- `data/handbook/algorithms/chunks`
+- `data/handbook/linux/chunks`
+- `data/handbook/math/chunks`
 
 ### Модель эмбеддингов
 
@@ -214,8 +286,8 @@ E5 модели требуют префиксы:
 
 ```
 data/faiss_index/
-├── index.faiss    # Векторный индекс FAISS (~500KB)
-└── index.pkl      # Метаданные документов (~670KB)
+├── index.faiss    # Векторный индекс FAISS
+└── index.pkl      # Метаданные документов
 ```
 
 ---
@@ -277,27 +349,28 @@ answer = await engine.answer(
 
 ### 1. Скачать HTML файлы
 
-Создайте скрипт по аналогии с `yandex_python_handbook.py` для нового источника.
+Создайте скрипт по аналогии с существующими `download_handbook_*.py`:
+- Укажите `OUTPUT_DIR = RAW_DATA_DIR / "{topic}"`
+- Укажите `HANDBOOK_URL = "https://education.yandex.ru/handbook/{topic}"`
 
 ### 2. Создать скрипт извлечения
 
-Скопируйте и адаптируйте `extract_python_handbook.py`:
-- Обновите CSS селекторы под структуру HTML
-- Настройте фильтры для ненужных секций
+Скопируйте и адаптируйте `extract_handbook_*.py`:
+- Обновите пути к директориям
+- Настройте фильтры для ненужных секций (если отличаются)
 
 ### 3. Извлечь чанки
 
 ```bash
-uv run python extract_{topic}_handbook.py
+uv run python -m src.data_processing.extract_handbook_{topic}
 ```
 
 ### 4. Пересобрать индекс
 
+Добавьте путь к новым чанкам в `build_index.py` (в `default_dirs`) и запустите:
+
 ```bash
-uv run python build_faiss_index.py \
-    --chunks-dir data/handbook/python/chunks \
-    --chunks-dir data/handbook/{topic}/chunks \
-    --test
+uv run python -m src.data_processing.build_index --test
 ```
 
 ### Добавление документов в существующий индекс
@@ -332,11 +405,11 @@ retriever.save()
 
 | Метрика | Значение |
 |---------|----------|
-| Документов в индексе | 328 |
-| Размер индекса | ~1.2MB |
+| Документов в индексе (python+ml+cs) | 1276 |
+| Размер индекса | ~2-3MB |
 | Время загрузки индекса | ~100ms |
 | Время поиска (k=5) | ~10ms |
-| Время индексации (328 docs) | ~30 сек |
+| Время индексации | ~1-2 мин |
 
 ### Качество поиска
 
@@ -357,12 +430,24 @@ retriever.save()
 
 ```bash
 # 1. Скачать HTML (требует Chrome/Chromium)
-uv run python -m src.data_processing.download_handbook
+uv run python -m src.data_processing.download_handbook      # Python
+uv run python -m src.data_processing.download_handbook_ml   # ML
+uv run python -m src.data_processing.download_handbook_cs   # CS
+uv run python -m src.data_processing.download_handbook_cpp  # C++
+uv run python -m src.data_processing.download_handbook_algo # Algorithms
+uv run python -m src.data_processing.download_handbook_linux # Linux
+uv run python -m src.data_processing.download_handbook_math  # Math
 
 # 2. Извлечь текст и создать чанки
-uv run python -m src.data_processing.extract_handbook
+uv run python -m src.data_processing.extract_handbook      # Python
+uv run python -m src.data_processing.extract_handbook_ml   # ML
+uv run python -m src.data_processing.extract_handbook_cs   # CS
+uv run python -m src.data_processing.extract_handbook_cpp  # C++
+uv run python -m src.data_processing.extract_handbook_algo # Algorithms
+uv run python -m src.data_processing.extract_handbook_linux # Linux
+uv run python -m src.data_processing.extract_handbook_math  # Math
 
-# 3. Построить FAISS индекс
+# 3. Построить FAISS индекс (все хендбуки)
 uv run python -m src.data_processing.build_index --test
 ```
 
@@ -373,25 +458,54 @@ uv run python -m src.data_processing.build_index --test
 ```
 ai_interview_assistant/
 ├── data/
-│   ├── raw/handbook/python/     # Исходные HTML (27 файлов)
-│   ├── handbook/python/
-│   │   ├── chunks/              # Чанки для RAG (328 файлов)
-│   │   ├── handbook_python.txt
-│   │   └── handbook_python.json
-│   └── faiss_index/             # FAISS индекс
+│   ├── raw/handbook/
+│   │   ├── python/         # 27 HTML файлов
+│   │   ├── ml/             # 70 HTML файлов
+│   │   ├── cs/             # 24 HTML файла
+│   │   ├── cpp/            # 24 HTML файла
+│   │   ├── algorithms/     # 53 HTML файла
+│   │   ├── linux/          # 19 HTML файлов
+│   │   └── math/           # 43 HTML файла
+│   ├── handbook/
+│   │   ├── python/
+│   │   │   ├── chunks/     # 328 чанков
+│   │   │   ├── handbook_python.txt
+│   │   │   └── handbook_python.json
+│   │   ├── ml/
+│   │   │   ├── chunks/     # 816 чанков
+│   │   │   ├── handbook_ml.txt
+│   │   │   └── handbook_ml.json
+│   │   ├── cs/
+│   │   │   ├── chunks/     # 132 чанка
+│   │   │   ├── handbook_cs.txt
+│   │   │   └── handbook_cs.json
+│   │   └── ...             # Другие хендбуки (после извлечения)
+│   └── faiss_index/
 │       ├── index.faiss
 │       └── index.pkl
 ├── src/
-│   ├── data_processing/         # Скрипты обработки данных
-│   │   ├── __init__.py          # Пути к данным
-│   │   ├── download_handbook.py # Скачивание HTML
-│   │   ├── extract_handbook.py  # Извлечение текста
-│   │   └── build_index.py       # Построение индекса
+│   ├── data_processing/
+│   │   ├── __init__.py              # Пути к данным
+│   │   ├── download_handbook.py     # Python
+│   │   ├── download_handbook_ml.py  # ML
+│   │   ├── download_handbook_cs.py  # CS
+│   │   ├── download_handbook_cpp.py # C++
+│   │   ├── download_handbook_algo.py # Algorithms
+│   │   ├── download_handbook_linux.py # Linux
+│   │   ├── download_handbook_math.py  # Math
+│   │   ├── extract_handbook.py      # Python
+│   │   ├── extract_handbook_ml.py   # ML
+│   │   ├── extract_handbook_cs.py   # CS
+│   │   ├── extract_handbook_cpp.py  # C++
+│   │   ├── extract_handbook_algo.py # Algorithms
+│   │   ├── extract_handbook_linux.py # Linux
+│   │   ├── extract_handbook_math.py  # Math
+│   │   └── build_index.py           # Построение FAISS индекса
 │   └── vector_store/
 │       ├── __init__.py
-│       └── faiss_store.py       # FAISS Retriever
+│       └── faiss_store.py           # FAISS Retriever
 └── docs/
-    └── data_pipeline.md         # Эта документация
+    └── data_pipeline.md             # Эта документация
 ```
 
 ---
@@ -414,7 +528,7 @@ selenium = ">=4.39.0"
 
 ### Капча при скачивании
 
-При запуске `download_handbook.py` может появиться SmartCaptcha.
+При запуске `download_handbook_*.py` может появиться SmartCaptcha.
 Скрипт автоматически определит капчу и будет ждать — просто пройдите её вручную в открытом браузере.
 
 ### Индекс не загружается
@@ -432,7 +546,7 @@ uv run python -m src.data_processing.build_index
 
 **Возможные причины:**
 1. Индекс пустой — запустите `build_index.py`
-2. Нет чанков — запустите `extract_handbook.py`
+2. Нет чанков — запустите `extract_handbook_*.py`
 3. Ошибка в запросе — проверьте что запрос на русском
 
 ### Медленная индексация
@@ -444,6 +558,10 @@ uv run python -m src.data_processing.build_index
 
 ## Дальнейшее развитие
 
+- [x] Добавить хендбук по ML
+- [x] Добавить хендбук по CS
+- [x] Скачать хендбуки: C++, Algorithms, Linux, Math
+- [ ] Извлечь чанки из: C++, Algorithms, Linux, Math
 - [ ] Добавить транскрипции лекций из `transcripts/`
 - [ ] Hybrid search (BM25 + Vector)
 - [ ] Reranker для улучшения качества
