@@ -1,0 +1,60 @@
+services:
+  # Сервис для инициализации данных (обновление чанков и пересборка индекса)
+  # Запускается при первом билде, если индекс не существует
+  # Для принудительной пересборки установите FORCE_REBUILD_INDEX=true
+  data-init:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ai-interview-assistant:latest
+    volumes:
+      - ./data:/app/data
+    environment:
+      - PYTHONPATH=/app
+      - FORCE_REBUILD_INDEX=${FORCE_REBUILD_INDEX:-false}
+    command: >
+      sh -c "
+        if [ \"$$FORCE_REBUILD_INDEX\" = \"true\" ] || [ ! -f /app/data/faiss_index/index.faiss ]; then
+          echo '🔄 Обновление чанков...' &&
+          python -m src.data_processing.extract_handbook &&
+          python -m src.data_processing.extract_handbook_ml &&
+          python -m src.data_processing.extract_handbook_cs &&
+          python -m src.data_processing.extract_handbook_cpp &&
+          python -m src.data_processing.extract_handbook_algo &&
+          python -m src.data_processing.extract_handbook_linux &&
+          python -m src.data_processing.extract_handbook_math &&
+          echo '🔨 Пересборка FAISS индекса...' &&
+          python -m src.data_processing.build_index &&
+          echo '✅ Инициализация данных завершена!'
+        else
+          echo '✅ Индекс уже существует, пропускаем инициализацию'
+          echo '   Для принудительной пересборки установите FORCE_REBUILD_INDEX=true'
+        fi
+      "
+    restart: "no"
+
+  # Телеграм бот
+  bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ai-interview-assistant:latest
+    volumes:
+      - ./data:/app/data
+      - ./.env:/app/.env:ro
+    environment:
+      - PYTHONPATH=/app
+    env_file:
+      - .env
+    command: python -m src.bot.main
+    depends_on:
+      data-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
