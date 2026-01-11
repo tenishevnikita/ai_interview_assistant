@@ -15,21 +15,18 @@ _INLINE_CODE_RE = re.compile(r"`([^`\n]+)`")
 _BOLD_RE = re.compile(r"\*\*([^*\n]+?)\*\*|(?<![_*])__([^_\n]+?)__(?![_*])")
 # Italic: *text* or _text_ (но не **text** или __text__)
 # Используем lookahead/lookbehind чтобы не конфликтовать с жирным
-_ITALIC_RE = re.compile(r"(?<!\*)\*(?!\*)([^*\n]+?)(?<!\*)\*(?!\*)|(?<!_)_(?!_)([^_\n]+?)(?<!_)_(?!_)")
+_ITALIC_RE = re.compile(
+    r"(?<!\*)\*(?!\*)([^*\n]+?)(?<!\*)\*(?!\*)|(?<!_)_(?!_)([^_\n]+?)(?<!_)_(?!_)"
+)
 
 
 def _escape_html_text(text: str) -> str:
-    """
-    Экранирует HTML символы в тексте, но сохраняет уже существующие HTML теги.
-    Использует простой подход: сначала защищаем валидные HTML теги, затем экранируем остальное.
-    """
-    # Сначала защищаем валидные HTML теги, заменяя их на плейсхолдеры
-    # Это нужно чтобы они не были экранированы
+    """Escapes HTML but preserves valid Telegram HTML tags."""
     placeholders: dict[str, str] = {}
     placeholder_counter = 0
-    
-    # Защищаем теги <a> с атрибутами (самые сложные)
-    a_tag_pattern = re.compile(r'<a\s+[^>]+>')
+
+    a_tag_pattern = re.compile(r"<a\s+[^>]+>")
+
     def protect_a_tag(match):
         nonlocal placeholder_counter
         tag = match.group(0)
@@ -37,9 +34,9 @@ def _escape_html_text(text: str) -> str:
         placeholders[placeholder] = tag
         placeholder_counter += 1
         return placeholder
+
     text = a_tag_pattern.sub(protect_a_tag, text)
-    
-    # Защищаем закрывающие теги </a>
+
     def protect_a_close(match):
         nonlocal placeholder_counter
         tag = match.group(0)
@@ -47,20 +44,18 @@ def _escape_html_text(text: str) -> str:
         placeholders[placeholder] = tag
         placeholder_counter += 1
         return placeholder
-    text = re.sub(r'</a>', protect_a_close, text)
-    
-    # Защищаем другие валидные теги
+
+    text = re.sub(r"</a>", protect_a_close, text)
+
     valid_tags = ["<b>", "</b>", "<i>", "</i>", "<code>", "</code>", "<pre>", "</pre>"]
     for tag in valid_tags:
         placeholder = f"__PLACEHOLDER_{placeholder_counter}__"
         placeholders[placeholder] = tag
         text = text.replace(tag, placeholder)
         placeholder_counter += 1
-    
-    # Экранируем всё остальное
+
     escaped = html.escape(text)
-    
-    # Восстанавливаем защищенные теги
+
     for placeholder, tag in placeholders.items():
         escaped = escaped.replace(placeholder, tag)
 
@@ -68,15 +63,7 @@ def _escape_html_text(text: str) -> str:
 
 
 def _markdown_to_html(text: str) -> str:
-    """
-    Конвертирует базовые Markdown элементы в HTML для Telegram.
-
-    Порядок важен:
-    1. Inline код (чтобы не трогать код внутри)
-    2. Жирный текст
-    3. Курсив
-    """
-    # Обрабатываем inline код - заменяем на плейсхолдеры
+    """Converts basic Markdown to Telegram HTML."""
     code_placeholders: dict[str, str] = {}
     code_counter = 0
 
@@ -90,21 +77,18 @@ def _markdown_to_html(text: str) -> str:
 
     text = _INLINE_CODE_RE.sub(replace_inline_code, text)
 
-    # Затем обрабатываем жирный текст
     def replace_bold(match: re.Match) -> str:
         content = match.group(1) or match.group(2)
         return f"<b>{html.escape(content)}</b>"
 
     text = _BOLD_RE.sub(replace_bold, text)
 
-    # Затем обрабатываем курсив
     def replace_italic(match: re.Match) -> str:
         content = match.group(1) or match.group(2)
         return f"<i>{html.escape(content)}</i>"
 
     text = _ITALIC_RE.sub(replace_italic, text)
 
-    # Восстанавливаем inline код
     for placeholder, html_code in code_placeholders.items():
         text = text.replace(placeholder, html_code)
 
@@ -133,73 +117,56 @@ def _render_text_html(text: str) -> str:
     # Конвертируем остальной Markdown в HTML
     text = _markdown_to_html(text)
 
-    # Обрабатываем заголовки: применяем форматирование внутри них, затем оборачиваем в <b>
     for placeholder, heading_text in heading_placeholders.items():
-        # Применяем форматирование к тексту заголовка
         processed_heading = heading_text
 
-        # Обрабатываем inline код
         processed_heading = _INLINE_CODE_RE.sub(
-            lambda m: f"<code>{html.escape(m.group(1))}</code>",
-            processed_heading
+            lambda m: f"<code>{html.escape(m.group(1))}</code>", processed_heading
         )
 
-        # Убираем маркеры жирного текста (весь заголовок будет жирным)
         processed_heading = _BOLD_RE.sub(
-            lambda m: html.escape(m.group(1) or m.group(2)),
-            processed_heading
+            lambda m: html.escape(m.group(1) or m.group(2)), processed_heading
         )
 
-        # Обрабатываем курсив
         processed_heading = _ITALIC_RE.sub(
             lambda m: f"<i>{html.escape(m.group(1) or m.group(2))}</i>",
-            processed_heading
+            processed_heading,
         )
 
-        # Экранируем остальной HTML
         processed_heading = html.escape(processed_heading)
 
-        # Восстанавливаем теги кода и курсива (которые были экранированы)
-        # Находим код в исходном тексте
         code_match = _INLINE_CODE_RE.search(heading_text)
         if code_match:
             code_content = code_match.group(1)
-            escaped_code = html.escape(code_content)
             escaped_code_tag_open = html.escape("<code>")
             escaped_code_tag_close = html.escape("</code>")
-            # Заменяем экранированные теги и содержимое на правильные теги
             processed_heading = processed_heading.replace(
-                escaped_code_tag_open + escaped_code + escaped_code_tag_close,
-                f"<code>{escaped_code}</code>"
+                escaped_code_tag_open
+                + html.escape(code_content)
+                + escaped_code_tag_close,
+                f"<code>{code_content}</code>",
             )
 
-        # Находим курсив в исходном тексте
         italic_match = _ITALIC_RE.search(heading_text)
         if italic_match:
             italic_content = italic_match.group(1) or italic_match.group(2)
-            escaped_italic = html.escape(italic_content)
             escaped_italic_tag_open = html.escape("<i>")
             escaped_italic_tag_close = html.escape("</i>")
-            # Заменяем экранированные теги и содержимое на правильные теги
             processed_heading = processed_heading.replace(
-                escaped_italic_tag_open + escaped_italic + escaped_italic_tag_close,
-                f"<i>{escaped_italic}</i>"
+                escaped_italic_tag_open
+                + html.escape(italic_content)
+                + escaped_italic_tag_close,
+                f"<i>{italic_content}</i>",
             )
 
-        # Оборачиваем весь заголовок в <b>
         heading_html = f"<b>{processed_heading}</b>"
         text = text.replace(placeholder, heading_html)
 
-    # Экранируем HTML символы, но сохраняем валидные теги
     text = _escape_html_text(text)
-
-    # Telegram HTML не поддерживает <br> тег - переносы строк остаются как \n
-    # Telegram сам обработает переносы строк при отображении
     return text
 
 
 def _render_code_html(code: str) -> str:
-    # Telegram HTML supports <pre><code> for monospaced blocks.
     return f"<pre><code>{html.escape(code)}</code></pre>"
 
 
@@ -255,64 +222,47 @@ def _split_plain(text: str, limit: int) -> list[str]:
 
 
 def format_and_split_for_telegram_html(text: str, limit: int = TG_LIMIT) -> list[str]:
-    """
-    Конвертирует Markdown в HTML для Telegram и разбивает на сообщения.
-
-    Блоки кода объединяются с текстом в одном сообщении, если это возможно.
-    Разбиение происходит только если сообщение превышает лимит.
-    """
+    """Converts Markdown to Telegram HTML and splits into messages."""
     blocks = _parse_fenced_blocks(text)
     rendered: list[str] = []
     for kind, content in blocks:
         if kind == "code":
-            # Рендерим код как HTML блок
             rendered.append(_render_code_html(content))
         else:
             rendered.append(_render_text_html(content))
 
-    # Объединяем блоки в сообщения, стараясь включать код вместе с текстом
     chunks: list[str] = []
     buf = ""
 
     for piece in rendered:
         piece_len = len(piece)
 
-        # Если текущий буфер пуст и кусок помещается - просто добавляем
         if not buf.strip() and piece_len <= limit:
             buf = piece
             continue
 
-        # Пытаемся добавить кусок к буферу
         combined_len = len(buf) + len(piece) if buf else piece_len
 
         if combined_len <= limit:
-            # Можно объединить - добавляем к буферу
             if buf:
-                # Добавляем перенос строки между текстом и кодом для читаемости
                 buf = f"{buf}\n{piece}"
             else:
                 buf = piece
         else:
-            # Не помещается - нужно разбить
             if buf.strip():
-                # Сохраняем текущий буфер
                 if buf.startswith("<pre><code>"):
-                    # Это блок кода - отправляем как есть
                     chunks.append(buf)
                 else:
-                    # Это текст - разбиваем по необходимости
                     chunks.extend(_split_plain(buf, limit))
                 buf = ""
 
-            # Обрабатываем текущий кусок
             if piece.startswith("<pre><code>"):
-                # Блок кода - проверяем размер
                 if piece_len <= limit:
                     buf = piece
                 else:
-                    # Код слишком большой - нужно разбить по строкам
-                    # Извлекаем код из HTML
-                    code_match = re.search(r"<pre><code>(.*?)</code></pre>", piece, re.DOTALL)
+                    code_match = re.search(
+                        r"<pre><code>(.*?)</code></pre>", piece, re.DOTALL
+                    )
                     if code_match:
                         code_content = code_match.group(1)
                         code_lines = code_content.splitlines(keepends=True)
@@ -323,23 +273,21 @@ def format_and_split_for_telegram_html(text: str, limit: int = TG_LIMIT) -> list
                                 code_buf += line
                             else:
                                 if code_buf:
-                                    chunks.append(_render_code_html(code_buf.rstrip("\n")))
+                                    chunks.append(
+                                        _render_code_html(code_buf.rstrip("\n"))
+                                    )
                                 code_buf = line
                         if code_buf.strip():
                             buf = _render_code_html(code_buf.rstrip("\n"))
                     else:
-                        # Fallback: отправляем как есть (будет ошибка, но лучше чем ничего)
                         chunks.append(piece)
             else:
-                # Текст - разбиваем по необходимости
                 chunks.extend(_split_plain(piece, limit))
 
-    # Добавляем оставшийся буфер
     if buf.strip():
         if buf.startswith("<pre><code>"):
             chunks.append(buf)
         else:
             chunks.extend(_split_plain(buf, limit))
 
-    # Telegram HTML dislikes completely empty messages.
     return [c for c in (c.strip() for c in chunks) if c]

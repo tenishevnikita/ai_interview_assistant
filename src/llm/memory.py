@@ -18,12 +18,6 @@ class UserPrefs:
 
 
 class MemoryStore:
-    """In-memory storage for chat histories and user preferences (baseline).
-
-    Notes:
-    - Keyed by Telegram `chat_id` for history (group chats supported).
-    - Keyed by Telegram `user_id` for preferences (style).
-    """
 
     def __init__(self, max_messages: int = 12) -> None:
         self._max_messages = max_messages
@@ -52,5 +46,4 @@ class MemoryStore:
         self._prefs[user_id] = UserPrefs(style=style)
 
     def clear_history(self, chat_id: int) -> None:
-        """Очищает историю диалога для указанного чата."""
         self._histories[chat_id] = []

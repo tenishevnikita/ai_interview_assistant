@@ -1,0 +1,15 @@
+{"id": "retrieval_001", "question": "Чем списки отличаются от кортежей в Python?", "relevant_doc_ids": ["chunk_066_упорядоченные_коллекции_строки_списки_и_кортежи", "chunk_084_кортежи_неизменяемые_списки"], "tags": ["python", "data-structures"]}
+{"id": "retrieval_002", "question": "Что такое кортежи в Python и когда их стоит использовать?", "relevant_doc_ids": ["chunk_084_кортежи_неизменяемые_списки"], "tags": ["python", "data-structures"]}
+{"id": "retrieval_003", "question": "Как устроены словари в Python?", "relevant_doc_ids": ["chunk_103_как_устроен_словарь"], "tags": ["python", "data-structures"]}
+{"id": "retrieval_004", "question": "Что такое f-строки в Python и как их использовать?", "relevant_doc_ids": ["chunk_019_f-строки"], "tags": ["python", "string-formatting"]}
+{"id": "retrieval_005", "question": "Как определяется функция в Python?", "relevant_doc_ids": ["chunk_187_синтаксис_функции"], "tags": ["python", "functions"]}
+{"id": "retrieval_006", "question": "В чем преимущества генераторов перед списками в Python?", "relevant_doc_ids": ["chunk_125_генераторы_и_производительность"], "tags": ["python", "generators", "performance"]}
+{"id": "retrieval_007", "question": "Какие типы задач машинного обучения существуют?", "relevant_doc_ids": ["chunk_008_постановка_задачи"], "tags": ["ml", "supervised-learning"]}
+{"id": "retrieval_008", "question": "Что такое переобучение модели и как его избежать?", "relevant_doc_ids": ["chunk_012_выбор_модели_переобучение"], "tags": ["ml", "overfitting"]}
+{"id": "retrieval_009", "question": "Какие метрики качества используются в машинном обучении?", "relevant_doc_ids": ["chunk_009_критерии_качества"], "tags": ["ml", "metrics"]}
+{"id": "retrieval_010", "question": "В чем разница между точностью и полнотой в задачах классификации?", "relevant_doc_ids": ["chunk_103_точность_и_полнота"], "tags": ["ml", "metrics", "classification"]}
+{"id": "retrieval_011", "question": "Что такое линейная регрессия и метод наименьших квадратов?", "relevant_doc_ids": ["chunk_018_линейная_регрессия_и_метод_наименьших_квадратов_мн"], "tags": ["ml", "regression"]}
+{"id": "retrieval_012", "question": "Какие проблемы с качеством данных встречаются в машинном обучении?", "relevant_doc_ids": ["chunk_010_данные"], "tags": ["ml", "data-quality"]}
+{"id": "retrieval_013", "question": "Что такое цикл for в Python и как он работает?", "relevant_doc_ids": ["chunk_050_циклfor"], "tags": ["python", "loops"]}
+{"id": "retrieval_014", "question": "Как работают переменные в Python?", "relevant_doc_ids": ["chunk_017_что_такое_переменные_и_как_с_ними_работать", "chunk_127_как_работает_присваивание", "chunk_128_как_python_хранит_переменные_в_памяти_и_почему_важ"], "tags": ["python", "basics"]}
+{"id": "retrieval_015", "question": "Как записать список строк в файл в Python?", "relevant_doc_ids": ["chunk_175_запись_списка_строк"], "tags": ["python", "file-io"]}

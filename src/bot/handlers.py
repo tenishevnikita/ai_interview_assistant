@@ -20,13 +20,14 @@ router = Router(name=__name__)
 
 memory = MemoryStore()
 
-# Инициализация ретривера
 try:
     retriever = create_retriever()
     if retriever.is_ready:
         logger.info(f"✓ FAISS индекс загружен. Документов: {retriever.document_count}")
     else:
-        logger.warning("⚠️ FAISS индекс не найден или пуст. Бот будет работать без базы знаний.")
+        logger.warning(
+            "⚠️ FAISS индекс не найден или пуст. Бот будет работать без базы знаний."
+        )
 except Exception as e:
     logger.error(f"❌ Ошибка при загрузке ретривера: {e}")
     retriever = None
@@ -67,7 +68,6 @@ async def cmd_detailed(message: Message) -> None:
 
 @router.message(Command("help"))
 async def cmd_help(message: Message) -> None:
-    """Команда помощи."""
     text = (
         "📖 Помощь\n\n"
         "Как пользоваться:\n"
@@ -87,7 +87,6 @@ async def cmd_help(message: Message) -> None:
 
 @router.message(Command("clear"))
 async def cmd_clear(message: Message) -> None:
-    """Очищает контекст диалога."""
     if not message.from_user or not message.chat:
         return
 
@@ -97,7 +96,6 @@ async def cmd_clear(message: Message) -> None:
 
 
 def _is_admin(user_id: int | None) -> bool:
-    """Проверяет, является ли пользователь администратором."""
     if user_id is None:
         return False
     return user_id in settings.admin_user_ids_list
@@ -105,7 +103,6 @@ def _is_admin(user_id: int | None) -> bool:
 
 @router.message(Command("admin"))
 async def cmd_admin(message: Message) -> None:
-    """Команда для доступа к админ-функциям."""
     if not message.from_user:
         return
 
@@ -123,19 +120,15 @@ async def cmd_admin(message: Message) -> None:
 
 @router.message(lambda m: m.document is not None)
 async def on_document(message: Message) -> None:
-    """Обработчик загрузки документов."""
     if not message.from_user or not message.document:
         return
 
-    # Проверка прав администратора
     if not _is_admin(message.from_user.id):
         await message.answer("❌ Только администраторы могут загружать файлы.")
         return
 
     doc = message.document
     file_size = doc.file_size or 0
-
-    # Валидация файла
     file_path = Path(doc.file_name or "unknown")
     is_valid, error_msg = validate_file(file_path, file_size)
 
@@ -144,8 +137,6 @@ async def on_document(message: Message) -> None:
         return
 
     try:
-        # Скачивание файла
-        # В aiogram 3.x bot.download() возвращает BytesIO напрямую
         bot = message.bot
         file_bytes_io = await bot.download(doc.file_id)
 
@@ -153,11 +144,9 @@ async def on_document(message: Message) -> None:
             await message.answer("❌ Не удалось скачать файл.")
             return
 
-        # Читаем содержимое файла из BytesIO (синхронный метод, без await)
-        file_bytes_io.seek(0)  # Убеждаемся, что указатель в начале
+        file_bytes_io.seek(0)
         file_bytes = file_bytes_io.read()
 
-        # Сохранение файла
         saved_path = save_uploaded_file(
             file_bytes,
             doc.file_name or "unknown",

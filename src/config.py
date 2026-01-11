@@ -20,6 +20,12 @@ class Settings(BaseSettings):
     # Mistral AI
     mistral_api_key: str = Field(..., description="API ключ Mistral AI")
 
+    # RAG settings
+    retrieval_k: int = Field(
+        default=10,
+        description="Количество документов для получения от ретривера",
+    )
+
     # Admin settings
     admin_user_ids: str = Field(
         default="",

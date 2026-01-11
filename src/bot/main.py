@@ -10,7 +10,6 @@ from src.config import settings
 
 
 async def setup_bot_commands(bot: Bot) -> None:
-    """Настраивает меню команд бота."""
     commands = [
         BotCommand(command="start", description="Начать работу с ботом"),
         BotCommand(command="help", description="Показать справку"),

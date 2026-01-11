@@ -3,6 +3,11 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+from dotenv import load_dotenv
+
+# Загружаем переменные окружения из .env файла
+load_dotenv()
+
 # Ensure repo root is on sys.path so `import src...` works reliably under pytest.
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:

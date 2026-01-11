@@ -4,12 +4,16 @@ import argparse
 import json
 import os
 
+from dotenv import load_dotenv
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_mistralai import ChatMistralAI
 
 from src.eval.dataset import load_conversation_cases
 from src.llm.chains import build_answer_chain, build_rewrite_chain
 from src.llm.memory import Style
+
+# Загружаем переменные окружения из .env файла
+load_dotenv()
 
 
 def _contains_all(haystack: str, needles: list[str]) -> bool:

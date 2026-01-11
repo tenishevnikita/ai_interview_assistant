@@ -24,6 +24,35 @@ class ConversationCase:
     tags: list[str]
 
 
+@dataclass(frozen=True)
+class RetrievalCase:
+    id: str
+    question: str
+    relevant_doc_ids: list[str]
+    tags: list[str]
+
+
+def load_retrieval_cases(path: str | Path) -> list[RetrievalCase]:
+    p = Path(path)
+    if not p.exists():
+        return []
+
+    cases: list[RetrievalCase] = []
+    for line in p.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        obj = json.loads(line)
+        cases.append(
+            RetrievalCase(
+                id=obj["id"],
+                question=obj["question"],
+                relevant_doc_ids=obj.get("relevant_doc_ids", []),
+                tags=obj.get("tags", []),
+            )
+        )
+    return cases
+
+
 def load_conversation_cases(path: str | Path) -> list[ConversationCase]:
     p = Path(path)
     cases: list[ConversationCase] = []
@@ -37,8 +66,12 @@ def load_conversation_cases(path: str | Path) -> list[ConversationCase]:
                 id=obj["id"],
                 history=history,
                 user_message=obj["user_message"],
-                expected_standalone_question_contains=obj.get("expected_standalone_question_contains", []),
-                expected_standalone_question_groups=obj.get("expected_standalone_question_groups", []),
+                expected_standalone_question_contains=obj.get(
+                    "expected_standalone_question_contains", []
+                ),
+                expected_standalone_question_groups=obj.get(
+                    "expected_standalone_question_groups", []
+                ),
                 style=obj.get("style", "brief"),
                 tags=obj.get("tags", []),
             )

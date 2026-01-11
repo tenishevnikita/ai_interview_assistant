@@ -17,7 +17,9 @@ async def test_rewrite_followup_gradient_boosting() -> None:
     if not api_key:
         pytest.skip("MISTRAL_API_KEY is not set")
 
-    model = ChatMistralAI(api_key=api_key, model="mistral-small-latest", temperature=0.0)
+    model = ChatMistralAI(
+        api_key=api_key, model="mistral-small-latest", temperature=0.0
+    )
     chain = build_rewrite_chain(model)
 
     history = [
