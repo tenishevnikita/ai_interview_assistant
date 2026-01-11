@@ -3,8 +3,46 @@
 ### Prerequisites
 - Python **3.12+**
 - [`uv`](https://github.com/astral-sh/uv) (recommended)
+- Docker & Docker Compose (для запуска через Docker)
 
 ### Setup
+
+#### Вариант 1: Docker (рекомендуется)
+
+1) Создай `.env` из шаблона:
+
+```bash
+cp env.example .env
+```
+
+2) Заполни переменные в `.env`:
+- `TELEGRAM_BOT_TOKEN` — получи у BotFather
+- `MISTRAL_API_KEY` — API ключ Mistral AI
+- `ADMIN_USER_IDS` — (опционально) список Telegram user ID администраторов через запятую
+- `TEMP_FILES_DIR` — (опционально) директория для временных файлов (по умолчанию: `data/temp`)
+
+3) Запусти через Docker Compose:
+
+```bash
+# Первый запуск (автоматически обновит чанки и пересоберет индекс)
+docker-compose up --build
+
+# Принудительная пересборка индекса
+FORCE_REBUILD_INDEX=true docker-compose up --build
+
+# Обычный запуск (пропустит инициализацию, если индекс уже есть)
+docker-compose up
+```
+
+При первом запуске автоматически:
+- Обновляются чанки из всех handbook'ов (Python, ML, CS, C++, Algorithms, Linux, Math)
+- Пересобирается FAISS индекс
+
+Данные сохраняются в `./data` (volume), индекс в `./data/faiss_index/`.
+
+Подробнее см. [docs/docker.md](docs/docker.md).
+
+#### Вариант 2: Локальная установка
 1) Create `.env` from template:
 
 ```bash
@@ -17,13 +55,15 @@ cp env.example .env
 - `ADMIN_USER_IDS` — (optional) comma-separated list of Telegram user IDs for admin access
 - `TEMP_FILES_DIR` — (optional) directory for temporary files (default: `data/temp`)
 
-3) Install deps:
+3) Установи зависимости:
 
 ```bash
 uv sync
 ```
 
 ### Building the Knowledge Base Index
+
+**Примечание:** При использовании Docker индекс собирается автоматически при первом запуске.
 
 Before running the bot, you need to build the FAISS index:
 
