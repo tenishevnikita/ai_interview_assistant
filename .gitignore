@@ -33,6 +33,7 @@ logs/
 *.csv
 *.tsv
 *.json
+!eval_rag_report.json
 *.xml
 *.parquet
 *.h5
